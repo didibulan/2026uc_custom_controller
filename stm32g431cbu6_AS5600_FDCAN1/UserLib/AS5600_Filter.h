@@ -16,9 +16,9 @@
 */
 typedef enum
 {
-    FILTER_MODE_NONE,   //原始输出
-    FILTER_MODE_LPF,    //一阶低通
-    FILTER_MODE_MEDIAN, //中值滤波
+    FILTER_MODE_NONE = 0,   //原始输出
+    FILTER_MODE_LPF = 1,    //一阶低通
+    FILTER_MODE_MEDIAN = 2, //中值滤波
 }Filter_Mode;
 
 typedef struct
