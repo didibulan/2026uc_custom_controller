@@ -5,11 +5,10 @@
 #include "Bsp_FDCAN.h"
 
 
-//stm32g431cbu6只有一路fdcan
+//stm32g431cbu6开了一路fdcan
 FDCAN_RxFrame_s FDCAN_RxFrame = {
     .hcan = &hfdcan1
 };
-
 
 void FDCAN_Init()
 {

@@ -61,7 +61,7 @@ static uint8_t AS5600_GetID(void)
   * 参    数：Angle 实际角度值(0~360.0°)
   * 返 回 值：无
   */
-static void AS5600_GetData(AS5600_Data *AS5600data)
+void AS5600_GetData(AS5600_Data *AS5600data)
 {
     uint8_t DataH,DataL;
 

@@ -23,6 +23,6 @@ typedef struct
 }FDCAN_RxFrame_s;
 
 void FDCAN_Init(void);
-void FDCAN_Transmit();
+void FDCAN_Transmit(FDCAN_HandleTypeDef *hfdcan,uint8_t *data,uint32_t id);
 
 #endif //BSP_FDCAN_H

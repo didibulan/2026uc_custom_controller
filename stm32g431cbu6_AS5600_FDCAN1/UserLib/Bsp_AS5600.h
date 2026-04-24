@@ -50,6 +50,6 @@ void AS5600_Init(AS5600_HandleTypDef* AS5600_Data,I2C_HandleTypeDef *hi2c,FDCAN_
 static void AS5600_WriteReg(uint8_t RegAddress, uint8_t Data);
 static uint8_t AS5600_ReadReg(uint8_t RegAddress);
 static uint8_t AS5600_GetID(void);
-static void AS5600_GetData(AS5600_Data *AS5600data);
+void AS5600_GetData(AS5600_Data *AS5600data);
 
 #endif //AS5600_H

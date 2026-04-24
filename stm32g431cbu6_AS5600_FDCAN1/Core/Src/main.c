@@ -49,6 +49,19 @@
 
 /* USER CODE BEGIN PV */
 
+AS5600_FilterHandleTypDef AS5600_FilterData = {
+    .Filter_mode = FILTER_MODE_LPF,
+    .alpha = 0.2f,
+    .window_size = 5,
+};
+
+AS5600_Data as5600_Data = {
+  .AS5600_FilterData = &AS5600_FilterData,
+  .RawAngle = 0,
+  .Angle_deg = 0.0f,
+  .FinalOutput = 0.0f,
+};
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -96,12 +109,16 @@ int main(void)
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
 
+  FDCAN_Init();
+  AS5600_Init(&as5600_Data,&hi2c2,&hfdcan1,0x201);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+      AS5600_GetData(&as5600_Data);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
