@@ -1,0 +1,8 @@
+//
+// Created by didib on 2026/4/30.
+//
+
+#ifndef CASCADE_PID_APP_COMMTASK_H
+#define CASCADE_PID_APP_COMMTASK_H
+
+#endif //CASCADE_PID_APP_COMMTASK_H
