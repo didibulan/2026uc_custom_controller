@@ -46,7 +46,11 @@ add_executable(${CMAKE_PROJECT_NAME}
         App/App_RefereeTask.c
         App/App_RefereeTask.h
         dm_motor/dm_motor.c
-        dm_motor/dm_motor.h)
+        dm_motor/dm_motor.h
+        UserLib/Bsp_can/Bsp_fdcan.c
+        UserLib/Bsp_can/Bsp_fdcan.h
+        App/robot_config.h
+)
 
 # Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)
@@ -64,6 +68,10 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 # Add include paths
 target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
+        ${CMAKE_CURRENT_SOURCE_DIR}/UserLib/Bsp_can
+        ${CMAKE_CURRENT_SOURCE_DIR}/UserLib/alg/alg_Pid
+        ${CMAKE_CURRENT_SOURCE_DIR}/dm_motor
+        ${CMAKE_CURRENT_SOURCE_DIR}/App
 )
 
 # Add project symbols (macros)
