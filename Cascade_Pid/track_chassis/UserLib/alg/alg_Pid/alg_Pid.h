@@ -27,7 +27,7 @@ typedef struct {
     float d_max;            // 微分限幅（max）
     float d_min;            // 微分限幅（min）
     // float integral;         // 积分
-    float derivative;       // 微分
+    // float derivative;       // 微分
     // float measure[2];       // 两次实际值
     // float error[2];         // 两次误差
     // float output;           // 输出

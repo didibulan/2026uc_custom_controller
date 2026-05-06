@@ -4,6 +4,7 @@
 
 //PID控制器注册函数
 
+#include "alg_portbag.h"
 #include "alg_Pid.h"
 #include "FreeRTOS.h"
 #include "robot_config.h"
@@ -35,13 +36,6 @@ static void Pid_AngleProtect(PidInstance_s *Pid){
     if (Pid->target[0] - Pid->measure[0] > half_angle) Pid->target[0] -= Pid->angle_max;
     else if (Pid->target[0] - Pid->measure[0] < -half_angle) Pid->target[0] += Pid->angle_max;
 }
-
-//限制函数
-static float Pid_Limit(float input, float max, float min){
-    if (input < min) return min;
-    else if (input > max) return max;
-    else return input;
-}
 //速度环
 void Pid_Speed(PidInstance_s *pid, float target, float measure){
     //检查pid是否正确使能
@@ -57,11 +51,11 @@ void Pid_Speed(PidInstance_s *pid, float target, float measure){
     pid->p_out = pid->kp * pid->error[0];
     //积分项(带限幅)
     pid->i_sum += pid->error[0];
-    pid->i_out = Pid_Limit(pid->ki * pid->i_sum, pid->i_max, pid->i_min);
+    pid->i_out = constrainf(pid->ki * pid->i_sum, pid->i_max, pid->i_min);
     //微分项
     pid->d_out = pid->kd * (pid->error[0] - pid->error[1]);
     //输出（带限幅）
-    pid->output = Pid_Limit(pid->p_out + pid->i_out + pid->d_out, pid->max_output, pid->min_output);
+    pid->output = constrainf(pid->p_out + pid->i_out + pid->d_out, pid->max_output, pid->min_output);
     //善后工作
     pid->target[1] = pid->target[0];
     pid->measure[1] = pid->measure[0];
@@ -75,11 +69,11 @@ void Pid_Angle(PidInstance_s *pid, float target, float measure, float MaxSpeed){
     pid->target[0] = target;
     pid->measure[0] = measure;
     //输入角度限制
-    Pid_Limit(pid->target[0], pid->target_max, pid->target_min);
+    constrainf(pid->target[0], pid->target_max, pid->target_min);
     //pid计算
     pid->error[0] = pid->target[0] - pid->measure[0];
     pid->i_sum += pid->error[0];
-    Pid_Limit(pid->i_sum, pid->i_max, pid->i_min);
+    constrainf(pid->i_sum, pid->i_max, pid->i_min);
     //比例项
     pid->p_out = pid->kp * pid->error[0];
     //积分项
@@ -96,6 +90,7 @@ void Pid_Angle(PidInstance_s *pid, float target, float measure, float MaxSpeed){
     pid->measure[1] = pid->measure[0];
     pid->error[1] = pid->error[0];
 }
+//位置控制
 float Pid_Calculate(PidInstance_s *angle_pid, PidInstance_s *speed_pid, float target_angle, float measure_angle, float measure_velocoty){
     if (angle_pid == NULL || speed_pid == NULL) return 0.0f;
     if (!angle_pid->is_enable || !speed_pid->is_enable) return 0.0f;

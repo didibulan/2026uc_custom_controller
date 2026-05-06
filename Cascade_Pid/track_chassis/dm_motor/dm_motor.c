@@ -140,13 +140,13 @@ bool Motor_Dm_Control(DmMotorInstance_s *motor, const float target) {
     memset(motor->can_instance->tx_buff, 0 , 8);
     if (motor->control_mode == DM_POSITION) {
         motor->target_position = target;
-        motor->target_velocity = Pid_Calculate(motor->angle_pid, motor->target_position, motor->message.out_position);
-        motor->output = Pid_Calculate(motor->velocity_pid, motor->target_velocity, motor->message.out_velocity);
+        motor->output = Pid_Calculate(motor->angle_pid, motor->velocity_pid, motor->target_position, motor->message.out_position, motor->message.out_velocity);
     }
     else
         if (motor->control_mode == DM_VELOCITY) {
             motor->target_velocity = target;
-            motor->output = Pid_Calculate(motor->velocity_pid, motor->target_velocity, motor->message.out_velocity);
+            Pid_Speed(motor->velocity_pid, motor->target_velocity, motor->message.out_velocity);
+            motor->output = motor->velocity_pid->output;
         }else {
         return false;
     }

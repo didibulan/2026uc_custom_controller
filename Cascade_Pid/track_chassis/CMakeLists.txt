@@ -50,6 +50,8 @@ add_executable(${CMAKE_PROJECT_NAME}
         UserLib/Bsp_can/Bsp_fdcan.c
         UserLib/Bsp_can/Bsp_fdcan.h
         App/robot_config.h
+        UserLib/alg/alg_portbag/alg_portbag.c
+        UserLib/alg/alg_portbag/alg_portbag.h
 )
 
 # Add STM32CubeMX generated sources
@@ -70,6 +72,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined include paths
         ${CMAKE_CURRENT_SOURCE_DIR}/UserLib/Bsp_can
         ${CMAKE_CURRENT_SOURCE_DIR}/UserLib/alg/alg_Pid
+        ${CMAKE_CURRENT_SOURCE_DIR}/UserLib/alg/alg_portbag
         ${CMAKE_CURRENT_SOURCE_DIR}/dm_motor
         ${CMAKE_CURRENT_SOURCE_DIR}/App
 )
