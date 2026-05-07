@@ -7,5 +7,5 @@
 
 
 void App_CommTask(void const* argument){
-    osDelay(1);
+    while (1) osDelay(100);
 }

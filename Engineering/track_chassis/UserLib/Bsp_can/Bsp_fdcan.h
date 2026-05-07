@@ -60,20 +60,7 @@ typedef struct {
 
 CanInstance_s* Can_Register(CanInitConfig_s* config);
 
-/**
- * @brief 通过CAN总线发送数据。
- * 该函数将指定的数据通过给定的CAN实例发送出去。如果发送成功，返回true；否则返回false。
- * @param instance 指向已注册的CanInstance_s结构体的指针，表示要使用的CAN实例
- * @param tx_buff 指向要发送的数据缓冲区的指针，数据长度应为8
- * @return 如果数据发送成功则返回true，否则返回false
- */
 bool Can_Transmit_External_Tx_Buff(CanInstance_s* instance, uint8_t* tx_buff);
-/**
- * @brief 通过CAN总线发送数据,为了避免大修MODULE而写的函数
- * 该函数将实例内部的发送缓冲区数据通过给定的CAN实例发送出去。如果发送成功，返回true；否则返回false。
- * @param instance 指向已注册的CanInstance_s结构体的指针，表示要使用的CAN实例
- * @return 如果数据发送成功则返回true，否则返回false
- */
 bool Can_Transmit( CanInstance_s *instance);
 
 #endif //CASCADE_PID_BSP_FDCAN_H

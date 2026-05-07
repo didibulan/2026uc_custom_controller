@@ -27,11 +27,12 @@ DmMotorInitConfig_s  motor_chassis0_init = {
     },
     .control_mode = DM_POSITION,
     .can_config = {
-        .fdcan_mode = FDCAN_BIT_SWITCHING_MODE,
-        .DLC = FDCAN_DLC_BYTES_8,
+        // .fdcan_mode = FDCAN_BIT_SWITCHING_MODE,
+        // .fdcan_mode = CAN_STANDARD_MODE,
+        // .DLC = FDCAN_DLC_BYTES_8,
         .can_number = 1,
-        .tx_id = 0x08,
-        .rx_id = 0x18,
+        .tx_id = 0x09,
+        .rx_id = 0x19,
     },
     .angle_pid_config = {
         .target_max = 0.0f,
@@ -79,7 +80,8 @@ DmMotorInitConfig_s  motor_chassis1_init = {
     },
     .control_mode = DM_POSITION,
     .can_config = {
-        .fdcan_mode = FDCAN_BIT_SWITCHING_MODE,
+        // .fdcan_mode = FDCAN_BIT_SWITCHING_MODE,
+        .fdcan_mode = CAN_STANDARD_MODE,
         .DLC = FDCAN_DLC_BYTES_8,
         .can_number = 1,
         .tx_id = 0x07,

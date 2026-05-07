@@ -108,38 +108,12 @@ typedef struct {
     float output;
 }DmMotorInstance_s;
 
-/**
- * @brief 注册DM电机实例
- * @param config DM电机初始化配置结构体指针
- * @return 成功返回DM_MotorInstance_s指针，失败返回NULL
- * @note 调用前需要确认CAN初始化成功
- * @date 2025-07-14
- */
 DmMotorInstance_s *Motor_DM_Register(DmMotorInitConfig_s *config);
-
-/**
- * @brief DM电机控制函数
- * @param motor 电机实例指针
- * @param target 控制量目标值
- * @return 成功返回true，失败返回false
- * @note 如果电机是速度模式，则target为目标转速
- * @note 如果电机是位置模式，则target为目标角度
- * @date 2025-07-14
- */
 bool Motor_Dm_Control(DmMotorInstance_s *motor, float target);
-
-/**
- * @brief DM电机发送使能、失能、清除错误、保存零点命令函数
- * @param motor 电机实例指针
- * @param cmd 要发送的命令
- * @date 2025-07-27
- */
 bool Motor_Dm_Cmd(DmMotorInstance_s *motor, DmMotorMode_e cmd);
-
 bool Motor_Dm_Mit_Control(const DmMotorInstance_s *motor, const float pos, const float vel, const float tor);
-
 bool Motor_Dm_Pos_Vel_Control(const DmMotorInstance_s *motor, float pos, float vel);
-
 bool Motor_Dm_Transmit(const DmMotorInstance_s *motor);
+bool Enable_Chassis_Motors(DmMotorInstance_s *motor_joint_x);
 
 #endif //CASCADE_PID_DM_MOTOR_H

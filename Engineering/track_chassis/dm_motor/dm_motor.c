@@ -172,7 +172,6 @@ bool Motor_Dm_Pos_Vel_Control(const DmMotorInstance_s *motor, float pos, float v
     return true;
 }
 
-
 bool Motor_Dm_Transmit(const DmMotorInstance_s *motor){
     if (motor == NULL || motor->can_instance == NULL){
         return false;
@@ -188,4 +187,14 @@ bool Motor_Dm_Transmit(const DmMotorInstance_s *motor){
     #endif
 
     return Can_Transmit(motor->can_instance);
+}
+//使能关节电机
+bool Enable_Chassis_Motors(DmMotorInstance_s *instance){
+    uint8_t retry = 0;
+    do{
+        Motor_Dm_Cmd(instance, DM_CMD_MOTOR_ENABLE);
+        Motor_Dm_Transmit(instance);
+        if (++retry > 100) return false;
+    }while (instance->motor_state == DM_DISABLE);
+    return true;
 }

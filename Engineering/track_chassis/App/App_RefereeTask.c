@@ -6,5 +6,5 @@
 #include "cmsis_os.h"
 
 void App_RefereeTask(void const* argument){
-    osDelay(1);
+    while (1) osDelay(100);
 }

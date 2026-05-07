@@ -3,6 +3,8 @@
 //
 #include "Bsp_fdcan.h"
 
+#include <sys/types.h>
+
 static uint8_t idx1;
 static CanInstance_s *fdcan1_instance[FDCAN_MAX_REGISTER_CNT];
 static uint8_t idx2;
@@ -33,13 +35,16 @@ FDCAN_FilterTypeDef FDCAN_FIFO1_Filter = {
     .FilterID2 = 0x00000000, // 过滤器 ID2
 };
 //私有函数
+//初始化过滤器配置
 static void FDCAN_Filter_Init(FDCAN_HandleTypeDef *fdcan_handle){
     HAL_FDCAN_ConfigFilter(fdcan_handle, &FDCAN_FIFO0_Filter);
     HAL_FDCAN_ConfigFilter(fdcan_handle, &FDCAN_FIFO1_Filter);
 }
+//初始化can服务
 static void FDCAN_Service_Init(FDCAN_HandleTypeDef *fdcan_handle){
     // 拒绝接收匹配不成功的标准 ID 和扩展 ID, 不接受远程帧
     HAL_FDCAN_ConfigGlobalFilter(fdcan_handle, FDCAN_REJECT, FDCAN_REJECT, FDCAN_FILTER_REMOTE, FDCAN_FILTER_REMOTE);
+    while (HAL_FDCAN_Start(fdcan_handle) != HAL_OK);
     HAL_FDCAN_ActivateNotification(fdcan_handle, FDCAN_IT_RX_FIFO0_NEW_MESSAGE | FDCAN_IT_RX_FIFO1_NEW_MESSAGE, 0);
 }
 static FDCAN_HandleTypeDef *Select_FDCAN_Handle(const uint8_t can_num){
@@ -54,6 +59,7 @@ static FDCAN_HandleTypeDef *Select_FDCAN_Handle(const uint8_t can_num){
         return NULL;
     }
 }
+//初始化can模块
 static void Fdcan_Init(uint8_t can_num){
     if (!fdcan_init_flag){
         FDCAN_Filter_Init(Select_FDCAN_Handle(can_num));
@@ -61,6 +67,7 @@ static void Fdcan_Init(uint8_t can_num){
         fdcan_init_flag = true;
     }
 }
+//检查注册配置的有效性
 static bool FDCAN_Register_Check(const CanInitConfig_s *config){
     if (config == NULL) return false;
     if (config->topic_name == NULL) return false;
@@ -106,4 +113,63 @@ CanInstance_s *Can_Register(CanInitConfig_s* config){
     if (instance->can_handle == &hfdcan3) fdcan3_instance[idx3++] = instance;
 
     return instance;
+}
+//发送数据（自定义发送内容）
+bool Can_Transmit_External_Tx_Buff( CanInstance_s *instance, uint8_t *tx_buff){
+    if (HAL_FDCAN_AddMessageToTxFifoQ(instance->can_handle, &instance->tx_conf, tx_buff) == HAL_OK){
+        return true;
+    }return false;
+}
+//发送函数，can实例中的内容
+bool Can_Transmit(CanInstance_s *instance){
+    if (HAL_FDCAN_AddMessageToTxFifoQ(instance->can_handle, &instance->tx_conf, instance->tx_buff) == HAL_OK){
+        return true;
+    }return false;
+}
+//解析实际字节数
+static uint8_t FDCAN_GetRxLen(uint8_t DataLength) {
+    switch (DataLength) {
+    case FDCAN_DLC_BYTES_0: return 0;
+    case FDCAN_DLC_BYTES_1: return 1;
+    case FDCAN_DLC_BYTES_2: return 2;
+    case FDCAN_DLC_BYTES_3: return 3;
+    case FDCAN_DLC_BYTES_4: return 4;
+    case FDCAN_DLC_BYTES_5: return 5;
+    case FDCAN_DLC_BYTES_6: return 6;
+    case FDCAN_DLC_BYTES_7: return 7;
+    case FDCAN_DLC_BYTES_8: return 8;
+    case FDCAN_DLC_BYTES_12: return 12;
+    case FDCAN_DLC_BYTES_16: return 16;
+    case FDCAN_DLC_BYTES_20: return 20;
+    case FDCAN_DLC_BYTES_24: return 24;
+    case FDCAN_DLC_BYTES_32: return 32;
+    case FDCAN_DLC_BYTES_48: return 48;
+    case FDCAN_DLC_BYTES_64: return 64;
+    default: return 0;
+    }
+}
+//FDCAN接收FIFO中断回调函数
+static void FDCAN_RxFifoCallback(const FDCAN_RxFrame_TypeDef *FDCAN_RxFIFOxFrame, const uint8_t idx, CanInstance_s **instance){
+    if (idx == 0) return;
+    for (uint8_t i = 0; i < idx; i++){
+        if (FDCAN_RxFIFOxFrame->Header.Identifier == instance[i]->rx_id){
+            if (instance[i]->can_module_callback != NULL){
+                instance[i]->rx_len = FDCAN_GetRxLen(FDCAN_RxFIFOxFrame->Header.DataLength);
+                memcpy(instance[i]->rx_buff, FDCAN_RxFIFOxFrame->rx_buff,instance[i]->rx_len);
+                instance[i]->cnt++;
+                if (instance[i]->cnt >= 0xFFFF) instance[i]->cnt = 0;
+                instance[i]->can_module_callback(instance[i]);
+            }else break;
+        }
+    }
+}
+//中断回调函数
+void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs){
+    if (RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE){
+        HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &FDCAN_RxFIFO0Frame->Header, FDCAN_RxFIFO0Frame->rx_buff);
+
+        if (hfdcan == &hfdcan1) FDCAN_RxFifoCallback(FDCAN_RxFIFO0Frame,idx1,fdcan1_instance);
+        if (hfdcan == &hfdcan2) FDCAN_RxFifoCallback(FDCAN_RxFIFO0Frame,idx2,fdcan2_instance);
+        if (hfdcan == &hfdcan3) FDCAN_RxFifoCallback(FDCAN_RxFIFO0Frame,idx3,fdcan3_instance);
+    }
 }
