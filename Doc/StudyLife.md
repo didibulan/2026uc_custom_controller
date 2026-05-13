@@ -1,6 +1,6 @@
 # 图例
 ❓问题
-💡自己的经验
+💡自己/同届的经验
 ⭐来自ai的解答
 🤗来自他人的解答
 👿我闯过的祸/差点闯的祸
@@ -21,22 +21,137 @@
 💡
 * **❓与别人合作时正确且安全且建议的git命令顺序**  
 🤗hwx:建议流程为:```git status```(检查目前根在哪里 以及我修改了哪些文件 要提交哪些)->```git stash``` (暂存所有更改)->```git pull``` (拉取最新更新 看看有没有别人提交了)->```git stash pop```(然后处理可能存在的冲突)->最后```git add``` 你需要的文件->```git commit -m```->```git push```(完成本次提交)  
-👿2026/5/6差点在head游离分支里面提交修改导致更改全部丢失
-
+👿2026/5/6差点在head游离分支里面提交修改导致更改全部丢失，然后还把修改提交到submodule了(~~属实非常丢人了~~)
+# 开发板
+## dji.c型开发板
+* 💡大疆c型开发板uart实际接口和丝印不是对应的！
+![alt text](370462cd9bf8ad34f9b7fd1923e5110c.png)
+## DM_MC02开发板
+* 🤗王草凡：  
+![alt text](24dfd45b6b2808dee5856546bbde9546.png)
 # Algorithm
+## PID
 * **❓PID算法的结果最终通过can通信传送到电机的时候，要将浮点数四舍五入成整数，这对最终的电机控制没有影响吗**  
 🤗hwx：没有（暂时还没遇到过）
+## 双缓冲
+* 先了解网络协议，🤗王草凡：SBUS和DBUS不一样(这里的电平反向也是一个坑)，h7开发板串口数据位配置成9位，校验位结束位基本不影响数据的接收，uart5引脚不对应(具体参见开发板->DM_MC02章节)  
+![alt text](ca7a9a924fbedc8e26ba02d7b1e38da7.png)
+![alt text](v2-89c6ffaf005e43ab99e0ac967c33732d_r.jpg)
+* 串口空闲中断的回调函数
+```c
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
+```
+* DMA双缓冲区整体初始化代码（这里是自己封装，HAL库应该有另外封装过）
+```c
+static void USART_DMAEx_MultiBuffer_Init(UART_HandleTypeDef *huart, uint32_t *DstAddress, uint32_t *SecondMemAddress, uint32_t DataLength)
+{
+ //🤗使用串口空闲中断处理数据
+ huart->ReceptionType = HAL_UART_RECEPTION_TOIDLE;//接收数据类型
+ huart->RxEventType = HAL_UART_RXEVENT_IDLE;//接收事件
+ //🤗串口接收数据的长度(36)
+ huart->RxXferSize = DataLength;
+ //🤗使能串口DMA模式，此处直接操作寄存器
+ SET_BIT(huart->Instance->CR3,USART_CR3_DMAR);
+ //使能串口空闲中断
+ __HAL_UART_ENABLE_IT(huart, UART_IT_IDLE); 
+ //🤗在设置DMA接收起点和终点时关闭DMA数据传输，DMA在设置好传输起点、终点时将自动开始传输。且数据传输的地址受到保护，需要关闭DMA传输时才可写入，所以在配置DMA的传输起点和终点的地址前需要先关闭DMA数据传输，以免发生传输意外
+do{
+    //🤗关闭DMA，查看该函数的定义后发现是将DMA 数据流 x 配置寄存器 (DMA_SxCR) 中的EN位置0，用一个do while 来判断 CR寄存器中的EN位是否置0，如果置0，退出循环，下面配置好DMA传输起点、终点后，要使能DMA传输，将EN位置1
+      __HAL_DMA_DISABLE(huart->hdmarx);
+  }while(((DMA_Stream_TypeDef  *)huart->hdmarx->Instance)->CR & DMA_SxCR_EN);
+//🤗设置DMA传输终点、起点
+//🤗注意，这里的寄存器是一个32位的地址。即需要传输数据外设的地址，也就是DMA传输的起点。而串口有其数据接收寄存器，该寄存器将接收到的数据一位一位的存放在这里，所以将DMA 数据流 x 外设地址寄存器 (DMA_SxPAR) 等于USART 接收数据寄存器 (USART_RDR)即可。注意：STM32F4系列的串口数据接收寄存器为DR，少一个R
+((DMA_Stream_TypeDef  *)huart->hdmarx->Instance)->PAR = (uint32_t)&huart->Instance->RDR;
+//🤗接下来配置DMA传输终点，因为使用的是双缓冲区DMA接收，所以需配置两个储存器地址
+((DMA_Stream_TypeDef  *)huart->hdmarx->Instance)->M0AR = (uint32_t)DstAddress;
+((DMA_Stream_TypeDef  *)huart->hdmarx->Instance)->M1AR (uint32_t)SecondMemAddress;
+//🤗设置DMA数据传输量
+((DMA_Stream_TypeDef  *)huart->hdmarx->Instance)->NDTR = DataLength;
+//💡开启硬件自动切换，使能 DMA 的双缓冲模式（乒乓缓冲）
+SET_BIT(((DMA_Stream_TypeDef  *)huart->hdmarx->Instance)->CR, DMA_SxCR_DBM);
+//🤗使能DMA，前面因为设置DMA地址时关闭了DMA使能，最后要将DMA重新使能才可传输
+__HAL_DMA_ENABLE(huart->hdmarx);	
+}
+```
+* 函数名称和传参类型
+```c
+static void USART_DMAEx_MultiBuffer_Init(UART_HandleTypeDef *huart, uint32_t *DstAddress, uint32_t *SecondMemAddress, uint32_t DataLength)
+```
+解释
+```text
+UART_HandleTypeDef *huart：接收哪个串口数据的结构体指针。
+uint32_t *DstAddress：第一个缓冲区的地址
+uint32_t *SecondMemAddress ：第二个缓冲区的地址
+uint32_t DataLength：接收数据的长度
 
+我们使用 串口5接收遥控器数据 UART_HandleTypeDef *huart = huart5
+定义一个二维数组，用来作为两个缓冲区，其中RC_FRAME_LENGTH为18，即DT7遥控器一次发送的数据量为18字节
+uint8_t SBUS_MultiRx_Buf[2][RC_FRAME_LENGTH];
+所以 uint32_t *DstAddress = SBUS_MultiRx_Buf[0];
+uint32_t *SecondMemAddress = SBUS_MultiRx_Buf[1];
+因为我们要接收两个缓冲区数据量的数据，所以接收数据的长度为18*2 = 36
+uint32_t DataLength = 36
+```
+* c板例程
+```C
+static void USART_RxDMA_DoubleBuffer_Init(UART_HandleTypeDef *huart, uint32_t *DstAddress, uint32_t *SecondMemAddress, uint32_t DataLength){ 
+
+ huart->ReceptionType = HAL_UART_RECEPTION_TOIDLE; 
+
+ huart->RxEventType = HAL_UART_RXEVENT_IDLE; 
+
+ huart->RxXferSize = DataLength; 
+
+ SET_BIT(huart->Instance->CR3,USART_CR3_DMAR); 
+
+ __HAL_UART_ENABLE_IT(huart, UART_IT_IDLE);  
+ 
+ HAL_DMAEx_MultiBufferStart(huart->hdmarx,(uint32_t)&huart->Instance->RDR,(uint32_t)DstAddress,(uint32_t)SecondMemAddress,DataLength); 
+ }
+```
+* **Think**
+* 🤗王草凡：
+![alt text](image-3.png)
+* 这里关闭dma防止切换时出错的逻辑应该是有问题的，这样会导致另一个current_read的缓冲区无法写入，推荐DBM硬件自动切换  
+⭐
+```c
+void USER_USART5_RxHandler(UART_HandleTypeDef *huart, uint16_t Size)
+{
+    // 不关 DMA！直接读"非当前"的缓冲区
+    if ((DMA_Stream->CR & DMA_SxCR_CT) == 0) {
+        // DMA 在用 Buffer0，说明 Buffer1 已满
+        SBUS_TO_RC(SBUS_MultiRx_Buf[1], &remote_ctrl);
+    } else {
+        // DMA 在用 Buffer1，说明 Buffer0 已满  
+        SBUS_TO_RC(SBUS_MultiRx_Buf[0], &remote_ctrl);
+    }
+    // 只需要：清中断标志，可能的话确认 CNDTR 正确
+    // 不需要：DISABLE / 改 CT / 重装 CNDTR / ENABLE
+}
+```
+## DH
+* 确定坐标轴  
+![alt text](0c2edf2a40ef8e3c0a7be25fc6ee7bac.png)
+* 各参数定义
+![alt text](08f7c677050e4833c84f6f05cdad926e.png)
+* DH参数表
+![alt text](7ea30ff674f869143ae3fd657a0f9ce5.png)
+* 九轴机械臂dh表  
+![alt text](30bc8159a29e2ce86c32f338f6391197.png)
+![alt text](add410a4071feceb5158507f2da1d352.jpg)
+![alt text](0d896d2939bfaeaca92710ebc1b3d5f3.jpg)
 # Motor
 ## DM
 **关于上位机**  
 * v3版本的电机一定要通过can通讯更改fdcan模式，v4正常用uart串口更改就行 
 * **❓针对v3版本电机，很多情况下会出现在你canid等配置均正确的情况下，uart能够通信上，但是can通信不上的情况，如何解决**  
-💡用uart模式随便更改一个canid,然后转换到can模式，输入更改过后的canid，这样就能读取了（~~但是010001电机好像不能这么干~~），最后再用uart模式改回你想要设置的目标canid  
+💡用uart模式随便更改一个canid,然后转换到can模式，输入更改过后的canid，这样就能读取了（~~但是J10010电机好像不能这么干~~），最后再用uart模式改回你想要设置的目标canid  
 * ❓**为什么上位机中的波特率和电机中设置的波特率不同也能正常进行通讯？**  
 ⭐DeepSeek说：主要是因为现代DM电机（尤其是基于CAN/CANopen协议的）普遍具备波特率自动检测功能。（我猜这里他说的自动检测功能是上位机的自动检测功能，如果是电机自动检测，自动适应的话，那理论上我程序里面随便设什么波特率都能正常跟电机建立通讯，但事实上不是这样的） 
 
 **Questions**  
+* ❓电机无法使能  
+💡优先检查can总线终端电阻
 * ❓电机编码器读过来的位置范围同样是-3.14~3.14，为什么有的电机要转4圈，有的只要转一圈？  
 💡
  ## Dji
@@ -46,7 +161,14 @@
 * **烧录代码时，读条后显示部分代码未成功烧录：**  
 💡关闭其他烧录软件，比如你用ozone同时开了两个工程，或者另外一个类似于ozone的软件正在占用资源。如果还是没有用的话就把jlink拔插一下（~~重启解决90%的问题~~）
 
+# CubeMx
+**Questions**
+* ❓配置好cubemx，generatecode后，软件(keil,clion,vscode)里面没有更新  
+💡看着cubemx把代码generate完再切换界面，提早切换界面有概率不更新代码(~~非常傻逼，对~~)
 # SystemView
+* 记得在freertos里面注册相应的中断钩子函数  
+😈2026/5/12没有注册fdcan总线钩子(只取了名称)，导致system无法监看fdcan任务
+
 **Questions**  
 * **❓软件连接不上芯片：**  
 💡确保芯片内部烧录了正确的代码   
@@ -97,9 +219,13 @@ FLASH (rx)         : ORIGIN = 0x8000000, LENGTH = 1024K
 💡大概率是芯片不一样了，更改芯片头文件  
 * **❓<u>了解sysview栈溢出是怎么回事，六轴碰到过，但是九轴目前还没有碰到</u>**
 
-# 接线
+# 实操
+## 焊接
+* 检查电源供电是否正常
+## 接线
 * **👿拿到图纸首先考虑要不要镜像，特别是航插！（2026/5/4航插接线未考虑镜像，对着电路板和航插手册直接开始编号导致正负和fdcan全部接反，还好有电管。但是修补过后的接线很丑！！！）**
 * 线头不要裸露，能固定的全部固定，能扎紧的全部扎紧
+## 调车
 # 好奇宝宝：想到什么问什么系列
 * **❓为什么windows系统比较难连接git，乌班图比较好连接?**  
 ⭐Git 原生是为 Linux/Unix 设计的，Ubuntu 天生适配；Windows 是 “移植版”，多层兼容导致坑多、网络更易出问题。
@@ -143,3 +269,17 @@ d 轴（直轴）：控制磁场（励磁）；
 q 轴（交轴）：控制转矩（出力）；  
 分开调节 d、q 轴电流，再反变换回三相电压驱动电机。  
 → 结果：转矩平稳、噪声低、效率高、响应快，适合高精度、高效率场景。  
+* **❓rfid是什么**  
+⭐RFID = Radio Frequency Identification 射频识别简单说：不用接触、不用扫码，靠无线电波自动识别标签身份。
+核心组成  
+RFID 标签：贴在物品上，存 ID 信息，分两种  
+无源：无电池，靠读卡器电磁波供电，便宜、用得最多  
+有源：自带电池，距离远、成本高  
+RFID 读卡器：发射射频信号、读取标签 ID / 数据  
+后台系统：拿读到的 ID 做管理、统计、门禁、库存等  
+* **❓为什么有时候函数结构体类型传错了，代码照样能跑？**  
+💡因为你比较幸运，别的地方没有用更改后的结构体当入参的  
+* **❓异步通信和差分信号之间有什么联系吗？**  
+⭐它们是两个不同层面的概念，没有必然的绑定关系，但在实际工程中经常一起出现  
+![alt text](image-1.png)
+![alt text](image-2.png)
