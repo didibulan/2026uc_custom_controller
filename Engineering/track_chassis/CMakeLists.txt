@@ -52,6 +52,8 @@ add_executable(${CMAKE_PROJECT_NAME}
         App/robot_config.h
         UserLib/alg/alg_portbag/alg_portbag.c
         UserLib/alg/alg_portbag/alg_portbag.h
+        UserLib/alg/Chassis_Alg/Chassis_alg.c
+        UserLib/alg/Chassis_Alg/Chassis_alg.h
 )
 
 # Add STM32CubeMX generated sources

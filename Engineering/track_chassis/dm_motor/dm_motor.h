@@ -114,6 +114,8 @@ bool Motor_Dm_Cmd(DmMotorInstance_s *motor, DmMotorMode_e cmd);
 bool Motor_Dm_Mit_Control(const DmMotorInstance_s *motor, const float pos, const float vel, const float tor);
 bool Motor_Dm_Pos_Vel_Control(const DmMotorInstance_s *motor, float pos, float vel);
 bool Motor_Dm_Transmit(const DmMotorInstance_s *motor);
-bool Enable_Chassis_Motors(DmMotorInstance_s *motor_joint_x);
+
+bool Enable_Joint_Motors(DmMotorInstance_s **instance,uint8_t num);
+bool ZeroPoint_Mark(DmMotorInstance_s *instance);
 
 #endif //CASCADE_PID_DM_MOTOR_H

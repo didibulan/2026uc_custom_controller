@@ -6,24 +6,7 @@
 #include <string.h>
 #include "FreeRTOS.h"
 #include "robot_config.h"
-
-static int float_to_uint(const float x_float, const float x_min, const float x_max, const int bits){
-    const float span = x_max - x_min;
-    const float offset = x_min;
-    return (int)((x_float - offset) * ((float)((1 << bits) - 1)) / span);
-}
-static float uint_to_float(const int x_int, const float x_min, const float x_max, const int bits){
-    const float span = x_max - x_min;
-    const float offset = x_min;
-    return ((float)x_int)*span/((float)((1<<bits)-1)) + offset;
-}
-static float  Angle_Normalize (float angle){
-    while (angle > 3.141593f)
-        angle -=  2*3.141593f;
-    while (angle < -3.141593f)
-        angle +=  2*3.141593f;
-    return angle;
-}
+#include "alg_portbag.h"
 
 static void Motor_Dm_Decode( CanInstance_s *can_instance){
     if(can_instance == NULL){
@@ -61,8 +44,6 @@ static void Motor_Dm_Decode( CanInstance_s *can_instance){
         motor->message.total_angle = 0;
     }
 }
-
-
 
 DmMotorInstance_s *Motor_DM_Register(DmMotorInitConfig_s *config){
     if (config == NULL)
@@ -189,12 +170,34 @@ bool Motor_Dm_Transmit(const DmMotorInstance_s *motor){
     return Can_Transmit(motor->can_instance);
 }
 //使能关节电机
-bool Enable_Chassis_Motors(DmMotorInstance_s *instance){
+// bool Enable_Joint_Motors(DmMotorInstance_s *instance){
+//     uint8_t retry = 0;
+//     do{
+//         Motor_Dm_Cmd(instance, DM_CMD_MOTOR_ENABLE);
+//         Motor_Dm_Transmit(instance);
+//         if (++retry > 100) return false;
+//     }while (instance->motor_state == DM_DISABLE);
+//     return true;
+// }
+bool Enable_Joint_Motors(DmMotorInstance_s **instance,uint8_t num){
     uint8_t retry = 0;
-    do{
-        Motor_Dm_Cmd(instance, DM_CMD_MOTOR_ENABLE);
-        Motor_Dm_Transmit(instance);
-        if (++retry > 100) return false;
-    }while (instance->motor_state == DM_DISABLE);
+    for (uint8_t i = 0; i < num; i++)
+    {
+         do{
+            Motor_Dm_Cmd(instance[i], DM_CMD_MOTOR_ENABLE);
+            Motor_Dm_Transmit(instance[i]);
+            if (++retry > 100) return false;
+         }while (instance[i]->motor_state == DM_DISABLE);
+    }
+
+    return true;
+}
+
+//电机零点标定
+bool ZeroPoint_Mark(DmMotorInstance_s *instance)
+{
+    Motor_Dm_Cmd(instance, DM_CMD_ZERO_POSITION);
+    Motor_Dm_Transmit(instance);
+
     return true;
 }
