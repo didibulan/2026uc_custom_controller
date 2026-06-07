@@ -54,6 +54,8 @@ add_executable(${CMAKE_PROJECT_NAME}
         UserLib/alg/alg_portbag/alg_portbag.h
         UserLib/alg/Chassis_Alg/Chassis_alg.c
         UserLib/alg/Chassis_Alg/Chassis_alg.h
+        Dji_Motor/dji_mototr.c
+        Dji_Motor/dji_motor.h
 )
 
 # Add STM32CubeMX generated sources

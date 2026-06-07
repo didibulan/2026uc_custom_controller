@@ -92,10 +92,13 @@ CanInstance_s *Can_Register(CanInitConfig_s* config){
     memset(instance, 0, sizeof(CanInstance_s));
     instance->topic_name = config->topic_name;
     instance->tx_id = config->tx_id;
+
+    instance->tx_conf.Identifier = config->tx_id;
+
     instance->tx_conf.IdType = FDCAN_STANDARD_ID;//标准id
     instance->tx_conf.TxFrameType = FDCAN_DATA_FRAME;
     instance->tx_conf.DataLength = config->DLC;
-    // instance->tx_conf.ErrorStateIndicator = FDCAN_ESI_ACTIVE;//这个啥用？
+    instance->tx_conf.ErrorStateIndicator = FDCAN_ESI_ACTIVE;//这个啥用？
     instance->rx_id = config->rx_id;
     instance->parent_ptr = config->parent_ptr;
     instance->can_module_callback = config->can_module_callback;

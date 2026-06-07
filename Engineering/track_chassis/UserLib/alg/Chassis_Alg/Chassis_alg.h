@@ -7,6 +7,7 @@
 
 #include "alg_portbag.h"
 #include "dm_motor.h"
+#include "robot_config.h"
 
 //底盘类型枚举
 typedef enum {
@@ -65,6 +66,8 @@ typedef struct
     float power_limitation[4];//功率限制数组
     float out_speed[4];//输出速度
     float out_angle[4];//输出角度
+
+    // DjiMotor
 
 }ChassisInstance_s;
 

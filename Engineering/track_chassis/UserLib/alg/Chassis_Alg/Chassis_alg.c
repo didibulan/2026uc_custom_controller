@@ -2,8 +2,8 @@
 // Created by didib on 2026/5/31.
 //
 #include "Chassis_alg.h"
+// #include "portable.h"
 
-#include "portable.h"
 //检查初始化合法性
 static bool Chassis_Judgement(const ChassisInitConfig_s *chassis_initconfig)
 {
@@ -29,7 +29,10 @@ ChassisInstance_s *Chassis_Register(const ChassisInitConfig_s *Chassis_config)
     Chassis_Instance->mecanum_message = Chassis_config->mecanum_message;
     Chassis_Instance->omni_steering_message = Chassis_config->omni_steering_message;
     Chassis_Instance->chassis_speed = Chassis_config->chassis_speed;
-    Chassis_Instance->power_limitation = ;
+    // Chassis_Instance->power_limitation = ;
 
+    for(int i = 0; i < 4; i++){
+        // Chassis_Instance->chassis_motor[i] = Motor_Dji_Register(&Chassis_config->motor_config[i]);
+    }
     return Chassis_Instance;
 }

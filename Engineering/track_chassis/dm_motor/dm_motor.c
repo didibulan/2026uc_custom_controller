@@ -179,6 +179,9 @@ bool Motor_Dm_Transmit(const DmMotorInstance_s *motor){
 //     }while (instance->motor_state == DM_DISABLE);
 //     return true;
 // }
+/*
+ * 下面这种使能形式，有点积累，一旦第一个电机没有使能上，后面的电机就被阻塞了，建议用法上面一种，然后开一次for循环
+ */
 bool Enable_Joint_Motors(DmMotorInstance_s **instance,uint8_t num){
     uint8_t retry = 0;
     for (uint8_t i = 0; i < num; i++)
