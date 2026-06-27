@@ -30,6 +30,8 @@
 * 🤗王草凡：  
 ![alt text](24dfd45b6b2808dee5856546bbde9546.png)
 # Algorithm
+## CAN总线
+- ❓can总线的终端电阻是干嘛的？
 ## PID
 * **❓PID算法的结果最终通过can通信传送到电机的时候，要将浮点数四舍五入成整数，这对最终的电机控制没有影响吗**  
 🤗hwx：没有（暂时还没遇到过）
@@ -139,22 +141,24 @@ void USER_USART5_RxHandler(UART_HandleTypeDef *huart, uint16_t Size)
 ![alt text](7ea30ff674f869143ae3fd657a0f9ce5.png)
 * 九轴机械臂dh表  
 ![alt text](30bc8159a29e2ce86c32f338f6391197.png)
+已验证正确可用（两张图片只是建系方法不同，结果相同）
 ![alt text](add410a4071feceb5158507f2da1d352.jpg)
 ![alt text](0d896d2939bfaeaca92710ebc1b3d5f3.jpg)
 # Motor
 ## DM
 **关于上位机**  
-* v3版本的电机一定要通过can通讯更改fdcan模式，v4正常用uart串口更改就行 
+* 💡v3版本的电机一定要通过can通讯更改fdcan模式，v4正常用uart串口更改就行 
+- 💡还有达妙的“小巧思”：电脑上在打开dm官方的串口助手时，重新“打开串口”这个个操作会杀死电脑上连接的另外的usb设备，ozone就经常因为这个原因去世。所以它们两个最好还是“王不见王”
 * **❓针对v3版本电机，很多情况下会出现在你canid等配置均正确的情况下，uart能够通信上，但是can通信不上的情况，如何解决**  
 💡用uart模式随便更改一个canid,然后转换到can模式，输入更改过后的canid，这样就能读取了（~~但是J10010电机好像不能这么干~~），最后再用uart模式改回你想要设置的目标canid  
 * ❓**为什么上位机中的波特率和电机中设置的波特率不同也能正常进行通讯？**  
 ⭐DeepSeek说：主要是因为现代DM电机（尤其是基于CAN/CANopen协议的）普遍具备波特率自动检测功能。（我猜这里他说的自动检测功能是上位机的自动检测功能，如果是电机自动检测，自动适应的话，那理论上我程序里面随便设什么波特率都能正常跟电机建立通讯，但事实上不是这样的） 
 
 **Questions**  
-* ❓电机无法使能  
-💡优先检查can总线终端电阻
-* ❓电机编码器读过来的位置范围同样是-3.14~3.14，为什么有的电机要转4圈，有的只要转一圈？  
-💡
+* **❓电机无法使能**  
+💡优先检查can总线终端电阻，再检查你canl、canh有没有接反
+* **❓电机编码器读过来的位置范围同样是-3.14~3.14，为什么有的电机要转4圈，有的只要转一圈？**  
+💡很简单，你上位机没设置好
  ## Dji
 
 # Ozone
@@ -220,9 +224,24 @@ FLASH (rx)         : ORIGIN = 0x8000000, LENGTH = 1024K
 💡大概率是芯片不一样了，更改芯片头文件  
 * **❓<u>了解sysview栈溢出是怎么回事，六轴碰到过，但是九轴目前还没有碰到</u>**
 
+# Mujoco
+- 终端开启本地Mujoco```C:\python1\python.exe -m mujoco.viewer```/```python -m mujoco.viewer```
+- URDF适配
+- 直接用mujoco python把urdf文件加载后保存为mjcf
+```text
+C:\python1\python.exe -c "import mujoco; urdf=r'D:\RmProgram\EngineeringProject\Phoenix_26_engineering\pinocchio_ws\urdf\urdf\Engineer2.urdf'; mjcf=r'D:\RmProgram\EngineeringProject\Phoenix_26_engineering\pinocchio_ws\urdf\urdf\Engineer2_mujoco.xml'; m=mujoco.MjModel.from_xml_path(urdf); mujoco.mj_saveLastXML(mjcf, m); print(mjcf)"
+```
+生成的文件保存在这里
+```text
+D:\RmProgram\EngineeringProject\Phoenix_26_engineering\pinocchio_ws\urdf\urdf\Engineer2_mujoco.xml
+```
+- **❓mujoco提示无法打开文件**
+⭐stl文件太大，导致无法加载。解决方法：降面处理  
+
 # 轮腿
 [ACE战队 2024-2025赛季轮腿机器人技术文档-机械](https://bbs.robomaster.com/article/728195)
-
+# 硬件
+- type-c接口各个引脚的定义
 # 实操
 ## 焊接
 * 检查电源供电是否正常
